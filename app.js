@@ -12,6 +12,7 @@ const BASE_URL = [
   "http://localhost:3003",
   "https://ssa-admin.blackhatcode.in",
   "https://octopus-app-9lk2b.ondigitalocean.app",
+  "https://hammerhead-app-k2njf.ondigitalocean.app",
 ]; // http://ssa-admin.ssgoldindia.com/login    http://localhost:3000 https://ssa-admin.blackhatcode.in
 const errorHandler = require("./middlewares/errorHandler");
 const cronJobs = require("./cron");
