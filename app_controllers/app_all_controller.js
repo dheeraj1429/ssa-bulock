@@ -740,7 +740,12 @@ const placeOrder = catchAsync(async (req, res, next) => {
   const placedOrder = await withTransaction(async (session) => {
     const updateQueryArgs = [
       { _id: user._id },
-      { $inc: { reward_points: rewardPoints } },
+      {
+        $inc: {
+          reward_points: 0,
+          // rewardPoints
+        },
+      },
       { session },
     ];
     let updateRes = null;
