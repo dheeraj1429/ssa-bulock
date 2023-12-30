@@ -126,6 +126,8 @@ const Products_Schema = new mongoose.Schema(
     //     required:true,
     //     default:false
     // },
+    gst: { type: Number, default: 0 },
+    hsnNumber: { type: Number },
   },
   { timestamps: true }
 );

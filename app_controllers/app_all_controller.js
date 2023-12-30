@@ -663,30 +663,30 @@ const placeOrder = catchAsync(async (req, res, next) => {
     //   throw new CaptureError(message, httpStatus.INTERNAL_SERVER_ERROR);
     // }
 
-    // switch (userType) {
-    //   case "b2b": {
-    //     productPrice = productDetail.b2b_user_product_price;
-    //     break;
-    //   }
+    switch (userType) {
+      case "b2b": {
+        productPrice = productDetail.b2b_user_product_price || 0;
+        break;
+      }
 
-    //   case "b2c": {
-    //     productPrice = productDetail.b2c_user_product_price;
-    //     break;
-    //   }
+      case "b2c": {
+        productPrice = productDetail.b2c_user_product_price || 0;
+        break;
+      }
 
-    //   case "basic": {
-    //     productPrice = productDetail.product_price;
-    //     break;
-    //   }
+      case "basic": {
+        productPrice = productDetail.product_price || 0;
+        break;
+      }
 
-    //   default: {
-    //     const message = "Something went wrong!!";
-    //     throw new CaptureError(message, httpStatus.INTERNAL_SERVER_ERROR);
-    //   }
-    // }
+      default: {
+        const message = "Something went wrong!!";
+        throw new CaptureError(message, httpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
 
-    billing_amount += 0;
-    // parseInt(product.product_quantity) * parseFloat(productPrice);
+    billing_amount +=
+      parseInt(product.product_quantity) * (parseFloat(productPrice) || 0);
 
     const product_subcategory = productDetail?.product_subcategory;
     const product_category = productDetail?.product_category;
@@ -716,14 +716,17 @@ const placeOrder = catchAsync(async (req, res, next) => {
       product_subcategory: productDetail.product_subcategory,
       product_variant: productDetail.product_variant,
       product_quantity: product.product_quantity,
-      // product_price: productPrice ,
-      product_price: 0,
+      product_price: productPrice || 0,
       product_quantity_by: product?.product_quantity_by,
       product_images: productDetail.product_images,
+      gst: productDetail?.gst,
+      hsnNumber: productDetail?.hsnNumber,
     });
   }
   console.log(rewardPercentage, "rewardPercentage");
   rewardPoints = (billing_amount / 100) * rewardPercentage;
+
+  console.log("products", products);
 
   delete orderData.products;
   const order = {
@@ -742,8 +745,7 @@ const placeOrder = catchAsync(async (req, res, next) => {
       { _id: user._id },
       {
         $inc: {
-          reward_points: 0,
-          // rewardPoints
+          reward_points: rewardPoints || 0,
         },
       },
       { session },

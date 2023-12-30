@@ -438,11 +438,19 @@ const updateProductPrice = catchAsync(async (req, res, next) => {
   const noChanges = [];
 
   for (product in workbook_response) {
+    const hsnNumber =
+      workbook_response[product]?.["HSN "] ||
+      workbook_response[product]?.["HSN"];
+
     if (
       workbook_response[product]?.["PRICE"] &&
       workbook_response[product]?.["A PRICE"] &&
-      workbook_response[product]?.["PART NO"]
+      workbook_response[product]?.["PART NO"] &&
+      hsnNumber &&
+      workbook_response[product]?.["GST"]
     ) {
+      const gst = Math.floor(workbook_response[product]?.["GST"] * 100);
+
       const update = await Products_Schema.updateOne(
         { product_code: workbook_response[product]?.["PART NO"] },
         {
@@ -454,6 +462,8 @@ const updateProductPrice = catchAsync(async (req, res, next) => {
             b2c_user_product_price: Math.round(
               Number(workbook_response[product]?.["A PRICE"])
             ),
+            gst,
+            hsnNumber,
           },
         }
       );

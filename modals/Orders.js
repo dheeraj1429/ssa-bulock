@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Order_Schema = new mongoose.Schema(
   {
     order_id: {
@@ -7,11 +7,11 @@ const Order_Schema = new mongoose.Schema(
     },
     user: {
       type: mongoose.Types.ObjectId,
-      refPath: 'user_type',
+      refPath: "user_type",
     },
     user_type: {
       type: String,
-      enum: ['B2BUsers', 'B2CUsers', 'Users'],
+      enum: ["B2BUsers", "B2CUsers", "Users"],
       required: true,
     },
     customer_id: {
@@ -44,7 +44,7 @@ const Order_Schema = new mongoose.Schema(
     order_status: {
       type: String,
       required: true,
-      default: 'pending',
+      default: "pending",
     },
     ordered_products_transport_detail: {
       type: String,
@@ -61,7 +61,7 @@ const Order_Schema = new mongoose.Schema(
       {
         product_unique_id: {
           type: mongoose.Types.ObjectId,
-          ref: 'Products',
+          ref: "Products",
         },
         product_id: { type: String },
         product_code: { type: String },
@@ -81,6 +81,8 @@ const Order_Schema = new mongoose.Schema(
             path: { type: String },
           },
         ],
+        gst: { type: Number },
+        hsnNumber: { type: Number },
       },
     ],
     shipping_address: { type: String },
@@ -102,4 +104,4 @@ const Order_Schema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-module.exports = mongoose.model('Orders', Order_Schema);
+module.exports = mongoose.model("Orders", Order_Schema);

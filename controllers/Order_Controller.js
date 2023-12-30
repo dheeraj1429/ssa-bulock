@@ -340,6 +340,9 @@ const getOrderInvoice = catchAsync(async (req, res, next) => {
     });
   }
 
+  const state = "West bengal";
+  // const state = "Delhi";
+
   const order = await Orders_Schema.aggregate([
     { $match: { _id: mongoose.Types.ObjectId(orderId) } },
     {
@@ -349,9 +352,111 @@ const getOrderInvoice = catchAsync(async (req, res, next) => {
       },
     },
     {
+      $unwind: {
+        path: "$products",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $addFields: {
+        CGST: {
+          $cond: {
+            if: { $eq: ["$state", state] },
+            then: { $divide: ["$products.gst", 2] },
+            else: "$$REMOVE",
+          },
+        },
+        SGST: {
+          $cond: {
+            if: { $eq: ["$state", state] },
+            then: { $divide: ["$products.gst", 2] },
+            else: "$$REMOVE",
+          },
+        },
+        IGST: {
+          $cond: {
+            if: { $ne: ["$state", state] },
+            then: "$products.gst",
+            else: "$$REMOVE",
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        CGST1: {
+          $cond: {
+            if: "$CGST",
+            then: {
+              $convert: {
+                input: {
+                  $multiply: [
+                    {
+                      $convert: {
+                        input: "$products.product_price",
+                        to: "decimal",
+                      },
+                    },
+                    { $divide: ["$CGST", 100] },
+                  ],
+                },
+                to: "int",
+              },
+            },
+            else: "$$REMOVE",
+          },
+        },
+        SGST1: {
+          $cond: {
+            if: "$SGST",
+            then: {
+              $convert: {
+                input: {
+                  $multiply: [
+                    {
+                      $convert: {
+                        input: "$products.product_price",
+                        to: "decimal",
+                      },
+                    },
+                    { $divide: ["$SGST", 100] },
+                  ],
+                },
+                to: "int",
+              },
+            },
+            else: "$$REMOVE",
+          },
+        },
+        IGST1: {
+          $cond: {
+            if: "$IGST",
+            then: {
+              $convert: {
+                input: {
+                  $multiply: [
+                    {
+                      $convert: {
+                        input: "$products.product_price",
+                        to: "decimal",
+                      },
+                    },
+                    { $divide: ["$IGST", 100] },
+                  ],
+                },
+                to: "int",
+              },
+            },
+            else: "$$REMOVE",
+          },
+        },
+      },
+    },
+    {
       $project: {
         customer_id: "$customer_id",
         order_id: "$order_id",
+        state: "$state",
         customer_name: "$customer_name",
         customer_phone_number: "$customer_phone_number",
         customer_email: "$customer_email",
@@ -363,11 +468,126 @@ const getOrderInvoice = catchAsync(async (req, res, next) => {
         product_variant: "$products.product_variant",
         product_quantity: "$products.product_quantity",
         product_quantity_by: "$products.product_quantity_by",
-        product_price: "$products.product_quantity_by",
+        total_price: "$products.product_price",
+        product_price: {
+          $convert: {
+            input: {
+              $subtract: [
+                {
+                  $convert: { input: "$products.product_price", to: "decimal" },
+                },
+                {
+                  $add: [
+                    { $ifNull: ["$CGST1", 0] },
+                    { $ifNull: ["$IGST1", 0] },
+                    { $ifNull: ["$SGST1", 0] },
+                  ],
+                },
+              ],
+            },
+            to: "int",
+          },
+        },
+        gst: {
+          $concat: [
+            {
+              $cond: {
+                if: "$products.gst",
+                then: { $convert: { input: "$products.gst", to: "string" } },
+                else: "0",
+              },
+            },
+            "%",
+          ],
+        },
+        CGST: {
+          $cond: {
+            if: "$CGST",
+            then: {
+              $concat: [{ $convert: { input: "$CGST", to: "string" } }, "%"],
+            },
+            else: "$$REMOVE",
+          },
+        },
+        SGST: {
+          $cond: {
+            if: "$SGST",
+            then: {
+              $concat: [{ $convert: { input: "$SGST", to: "string" } }, "%"],
+            },
+            else: "$$REMOVE",
+          },
+        },
+        IGST: {
+          $cond: {
+            if: "$IGST",
+            then: {
+              $concat: [{ $convert: { input: "$IGST", to: "string" } }, "%"],
+            },
+            else: "$$REMOVE",
+          },
+        },
+        cgst_price: {
+          $cond: {
+            if: "$CGST1",
+            then: "$CGST1",
+            else: "$$REMOVE",
+          },
+        },
+        sgst_price: {
+          $cond: {
+            if: "$SGST1",
+            then: "$SGST1",
+            else: "$$REMOVE",
+          },
+        },
+        igst_price: {
+          $cond: {
+            if: "$IGST1",
+            then: "$IGST1",
+            else: "$$REMOVE",
+          },
+        },
+        hsn_number: "$products.hsnNumber",
         product_delivery_status: "$products.product_delivery_status",
       },
     },
   ]);
+
+  // {
+  //   $project: {
+  //     customer_id: "$customer_id",
+  //     order_id: "$order_id",
+  //     state: "$state",
+  //     customer_name: "$customer_name",
+  //     customer_phone_number: "$customer_phone_number",
+  //     customer_email: "$customer_email",
+  //     product_code: "$products.product_code",
+  //     product_name: "$products.product_name",
+  //     product_main_category: "$products.product_main_category",
+  //     product_category: "$products.product_category",
+  //     product_subcategory: "$products.product_subcategory",
+  //     product_variant: "$products.product_variant",
+  //     product_quantity: "$products.product_quantity",
+  //     product_quantity_by: "$products.product_quantity_by",
+  //     product_price: "$products.product_price",
+  //     gst: {
+  //       $concat: [
+  //         {
+  //           $cond: {
+  //             if: "$products.gst",
+  //             then: { $convert: { input: "$products.gst", to: "string" } },
+  //             else: "0",
+  //           },
+  //         },
+  //         "%",
+  //       ],
+  //     },
+  //     hsn_number: "$products.hsnNumber",
+  //     product_delivery_status: "$products.product_delivery_status",
+  //   },
+  // },
+  // ]);
 
   if (!order) {
     return res.status(404).json({
@@ -376,9 +596,12 @@ const getOrderInvoice = catchAsync(async (req, res, next) => {
     });
   }
 
+  console.log("order data", order);
+
   const fields = [
     "customer_id",
     "order_id",
+    "state",
     "customer_name",
     "customer_phone_number",
     "customer_email",
@@ -390,8 +613,17 @@ const getOrderInvoice = catchAsync(async (req, res, next) => {
     "product_variant",
     "product_quantity",
     "product_quantity_by",
-    "product_price",
     "product_delivery_status",
+    "gst",
+    "hsn_number",
+    "IGST",
+    "CGST",
+    "SGST",
+    "cgst_price",
+    "sgst_price",
+    "igst_price",
+    "total_price",
+    "product_price",
   ];
   const csv = json2csv(order, { fields });
   const filePath = `./uploads/${orderId}.csv`;
